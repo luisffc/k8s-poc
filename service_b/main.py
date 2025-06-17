@@ -1,15 +1,11 @@
 import httpx
 from fastapi import FastAPI
 from fastapi.responses import JSONResponse
-
-# Service B HOST
-SERVICE_B_HOST = "0.0.0.0"
-
-# Service B PORT
-SERVICE_B_PORT = 8012
+import os
 
 # Core URL where Service A is available
-SERVICE_A_URL = "http://0.0.0.0:8011"
+SERVICE_A_URL = os.environ.get("SERVICE_A_URL")
+
 
 app = FastAPI(
     title="Service B FastAPI Client",
@@ -27,8 +23,3 @@ def ping_service_a() -> JSONResponse:
         return JSONResponse({
             "message": response
         })
-
-
-if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run(app, host=SERVICE_B_HOST, port=SERVICE_B_PORT)

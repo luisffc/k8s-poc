@@ -1,0 +1,48 @@
+name: CI
+on:
+  workflow_dispatch:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Docker Meta
+        id: metsa
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io${{ github.owner }}/${{ github.repository }}
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=sha
+
+      - name: Build and Push Docker image
+        uses: docker/build-push-action@v6
+        with:
+          context: ./service_a
+          push: ${{ !github.event.act }} # Do not push when using act
+          tags: |
+            ${{ steps.meta.outputs.tags }}
+            service_a:${{ github.sha }}
+          labels: ${{ steps.meta.outputs.labels }}
+
+  local-deploy:
+    runs-on: ubuntu-22.04
+    # needs: build
+    if: ${{ github.event.act }} # Only run this job when using act
+    steps:
+      - uses: actions/checkout@v4
+      - uses: azure/setup-helm@v4
+
+      - name: Deploy to Local Environment
+        run: |
+          helm upgrade --install service-a ./charts/service-a \
+            --set image.repository=service_a \
+            --set image.tag=${{ github.sha }}

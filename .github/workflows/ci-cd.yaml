@@ -53,7 +53,7 @@ jobs:
 
     - name: Deploy with Helm
       run: |
-        helm install microservices ./helm/microservices
+        helm upgrade --install microservices ./helm/microservices
 
     - name: Test Services
       run: |

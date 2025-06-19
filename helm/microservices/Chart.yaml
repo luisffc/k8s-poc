@@ -1,0 +1,14 @@
+apiVersion: v2
+name: microservices
+description: A Helm chart for deploying both Service A and Service B
+type: application
+version: 0.1.0
+appVersion: "0.1.0"
+
+dependencies:
+  - name: service-a
+    version: 0.1.0
+    repository: file://../service-a
+  - name: service-b
+    version: 0.1.0
+    repository: file://../service-b

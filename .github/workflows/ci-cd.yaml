@@ -47,7 +47,7 @@ jobs:
         kind load docker-image service-b:latest
 
     - name: Install Helm
-      uses: azure/setup-helm@v3
+      uses: azure/setup-helm@v4
       with:
         version: 'latest'
 

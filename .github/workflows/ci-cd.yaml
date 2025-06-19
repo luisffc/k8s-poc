@@ -53,7 +53,10 @@ jobs:
 
     - name: Deploy with Helm
       run: |
+        helm list
         helm upgrade --install microservices ./helm/microservices
+        helm list
+        kubectl get deployments
 
     - name: Test Services
       run: |

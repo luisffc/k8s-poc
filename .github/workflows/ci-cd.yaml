@@ -81,4 +81,5 @@ jobs:
         kubectl wait --for=condition=ready pod -l app.kubernetes.io/name=service-b --timeout=60s
         kubectl port-forward svc/my-app-service-b 8012:8012 &
         sleep 5
+        curl -v http://localhost:8012/ping || (echo "Curl failed"; exit 1)
         curl -v http://localhost:8012/ping_service_a || (echo "Curl failed"; exit 1)

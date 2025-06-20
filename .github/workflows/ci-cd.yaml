@@ -53,7 +53,9 @@ jobs:
 
     - name: Deploy with Helm
       run: |
-        helm upgrade --install my-app ./charts/my-app
+        helm upgrade --install my-app ./charts/my-app \
+          --set service-a.image.tag=latest \
+          --set service-b.image.tag=latest
 
     - name: "Debug: Get all pods"
       run: |

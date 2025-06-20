@@ -1,0 +1,11 @@
+apiVersion: v2
+name: my-app
+description: Umbrella chart for deploying service-a and service-b
+version: 0.1.0
+dependencies:
+  - name: service-a
+    version: 0.1.0
+    repository: "file://charts/service-a"
+  - name: service-b
+    version: 0.1.0
+    repository: "file://charts/service-b"

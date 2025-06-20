@@ -1,0 +1,2 @@
+Thank you for installing the umbrella chart!
+This chart deploys service-a and service-b as dependencies.

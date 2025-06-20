@@ -3,8 +3,8 @@ name: CI/CD Pipeline
 on:
   push:
     branches: [ main ]
-  # pull_request:
-  #   branches: [ main ]
+  pull_request:
+    branches: [ main ]
 
 jobs:
   build:
@@ -54,12 +54,13 @@ jobs:
     - name: Deploy with Helm
       run: |
         helm list
-        helm upgrade --install microservices ./helm/microservices
+        helm upgrade --install my-app ./charts/my-app
         helm list
-        kubectl get deployments
 
     - name: Test Services
       run: |
-        kubectl port-forward svc/service-b 8012:8012 &
-        sleep 10
-        curl -s http://localhost:8012/call-service-a | grep "Greetings from Service A"
+        kubectl wait --for=condition=ready pod -l app.kubernetes.io/name=service-a --timeout=60s
+        kubectl wait --for=condition=ready pod -l app.kubernetes.io/name=service-b --timeout=60s
+        kubectl port-forward svc/my-app-service-b 8012:8012 &
+        sleep 5
+        curl -s http://localhost:8012/ping_service_a | grep "Greetings from Service A"

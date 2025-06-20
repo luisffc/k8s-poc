@@ -55,11 +55,28 @@ jobs:
       run: |
         helm upgrade --install my-app ./charts/my-app
 
+    - name: "Debug: Get all pods"
+      run: |
+        sleep 15
+        kubectl get pods -A -o wide
+
+    - name: "Debug: Describe pods for service-a"
+      run: kubectl describe pods -l app.kubernetes.io/name=service-a
+
+    - name: "Debug: Get events"
+      run: kubectl get events --sort-by=.metadata.creationTimestamp
+
+    - name: "Debug: Get pod logs for service-a"
+      run: |
+        for pod in $(kubectl get pods -l app.kubernetes.io/name=service-a -o jsonpath='{.items[*].metadata.name}'); do
+          echo "Logs for $pod:"
+          kubectl logs $pod || true
+        done
+
     - name: Test Services
       run: |
         kubectl wait --for=condition=ready pod -l app.kubernetes.io/name=service-a --timeout=90s
         kubectl wait --for=condition=ready pod -l app.kubernetes.io/name=service-b --timeout=90s
-        kubectl get deployment
         kubectl port-forward svc/my-app-service-b 8012:8012 &
         sleep 5
         curl -s http://localhost:8012/ping_service_a | grep "Greetings from Service A"

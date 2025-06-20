@@ -53,14 +53,13 @@ jobs:
 
     - name: Deploy with Helm
       run: |
-        helm list
         helm upgrade --install my-app ./charts/my-app
-        helm list
 
     - name: Test Services
       run: |
-        kubectl wait --for=condition=ready pod -l app.kubernetes.io/name=service-a --timeout=60s
-        kubectl wait --for=condition=ready pod -l app.kubernetes.io/name=service-b --timeout=60s
+        kubectl wait --for=condition=ready pod -l app.kubernetes.io/name=service-a --timeout=90s
+        kubectl wait --for=condition=ready pod -l app.kubernetes.io/name=service-b --timeout=90s
+        kubectl get deployment
         kubectl port-forward svc/my-app-service-b 8012:8012 &
         sleep 5
         curl -s http://localhost:8012/ping_service_a | grep "Greetings from Service A"

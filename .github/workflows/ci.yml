@@ -7,12 +7,12 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
 
       - name: Docker Meta
-        id: metsa
+        id: meta
         uses: docker/metadata-action@v5
         with:
           images: ghcr.io${{ github.owner }}/${{ github.repository }}
@@ -34,7 +34,7 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
 
   local-deploy:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     # needs: build
     if: ${{ github.event.act }} # Only run this job when using act
     steps:

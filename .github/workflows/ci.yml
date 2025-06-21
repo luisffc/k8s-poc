@@ -7,7 +7,7 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
 
@@ -34,7 +34,7 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
 
   local-deploy:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     # needs: build
     if: ${{ github.event.act }} # Only run this job when using act
     steps:

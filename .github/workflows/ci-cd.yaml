@@ -8,7 +8,7 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
 
     steps:
     - uses: actions/checkout@v4
@@ -22,7 +22,7 @@ jobs:
         context: ./service_a
         push: false
         load: true
-        tags: service-a:latest
+        tags: service-a:${{ github.sha }}
         cache-from: type=gha
         cache-to: type=gha,mode=max
 
@@ -32,7 +32,7 @@ jobs:
         context: ./service_b
         push: false
         load: true
-        tags: service-b:latest
+        tags: service-b:${{ github.sha }}
         cache-from: type=gha
         cache-to: type=gha,mode=max
 
@@ -43,8 +43,8 @@ jobs:
 
     - name: Load images into KinD
       run: |
-        kind load docker-image service-a:latest
-        kind load docker-image service-b:latest
+        kind load docker-image service-a:${{ github.sha }}
+        kind load docker-image service-b:${{ github.sha }}
 
     - name: Install Helm
       uses: azure/setup-helm@v4
@@ -54,26 +54,8 @@ jobs:
     - name: Deploy with Helm
       run: |
         helm upgrade --install my-app ./charts/my-app \
-          --set service-a.image.tag=latest \
-          --set service-b.image.tag=latest
-
-    - name: "Debug: Get all pods"
-      run: |
-        sleep 15
-        kubectl get pods -A -o wide
-
-    - name: "Debug: Describe pods for service-a"
-      run: kubectl describe pods -l app.kubernetes.io/name=service-a
-
-    - name: "Debug: Get events"
-      run: kubectl get events --sort-by=.metadata.creationTimestamp
-
-    - name: "Debug: Get pod logs for service-a"
-      run: |
-        for pod in $(kubectl get pods -l app.kubernetes.io/name=service-a -o jsonpath='{.items[*].metadata.name}'); do
-          echo "Logs for $pod:"
-          kubectl logs $pod || true
-        done
+          --set service-a.image.tag=${{ github.sha }} \
+          --set service-b.image.tag=${{ github.sha }}
 
     - name: Test Services
       run: |
@@ -81,5 +63,4 @@ jobs:
         kubectl wait --for=condition=ready pod -l app.kubernetes.io/name=service-b --timeout=60s
         kubectl port-forward svc/my-app-service-b 8012:8012 &
         sleep 5
-        curl -v http://localhost:8012/ping_service_a || (echo "Curl failed"; exit 1)
         curl -s http://localhost:8012/ping_service_a | grep "Greetings from Service A"

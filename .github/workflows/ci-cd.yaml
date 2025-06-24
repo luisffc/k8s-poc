@@ -55,12 +55,12 @@ jobs:
         bandit -r service_a/ service_b/ -f json -o bandit-report.json --configfile .securityconfig/bandit.yaml || true
         bandit -r service_a/ service_b/ -ll --configfile .securityconfig/bandit.yaml
 
-    - name: Run Safety Check
+    - name: Run Safety Scan
       run: |
-        safety check --file service_a/requirements.txt --output json --save-json safety-report-a.json || true
-        safety check --file service_b/requirements.txt --output json --save-json safety-report-b.json || true
-        safety check --file service_a/requirements.txt
-        safety check --file service_b/requirements.txt
+        safety scan --file service_a/requirements.txt --output json --save-json safety-report-a.json || true
+        safety scan --file service_b/requirements.txt --output json --save-json safety-report-b.json || true
+        safety scan --file service_a/requirements.txt
+        safety scan --file service_b/requirements.txt
 
     - name: Run pip-audit
       run: |
@@ -74,12 +74,14 @@ jobs:
       uses: hadolint/hadolint-action@v3.1.0
       with:
         dockerfile: service_a/Dockerfile
+        config: .securityconfig/.hadolint.yaml
         failure-threshold: warning
 
     - name: Run Hadolint for Service B
       uses: hadolint/hadolint-action@v3.1.0
       with:
         dockerfile: service_b/Dockerfile
+        config: .securityconfig/.hadolint.yaml
         failure-threshold: warning
 
     # Multi-language Security Analysis

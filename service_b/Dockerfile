@@ -27,7 +27,7 @@ COPY --chown=webapp:webapp requirements.txt .
 
 # Security: Upgrade pip and install packages as non-root user
 USER webapp
-RUN pip install --no-cache-dir --upgrade pip && \
+RUN pip install --no-cache-dir --upgrade pip==25.1 && \
     pip install --no-cache-dir --user -r requirements.txt
 
 # Add user's local bin to PATH

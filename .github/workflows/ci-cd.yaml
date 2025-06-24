@@ -93,23 +93,6 @@ jobs:
       run: |
         kubectl wait --for=condition=ready pod -l app.kubernetes.io/name=service-a --timeout=60s
         kubectl wait --for=condition=ready pod -l app.kubernetes.io/name=service-b --timeout=60s
-
-        kubectl get deployment,svc,pod -o wide
-
-        # Let's add some debug information
-        echo "--- Service B logs ---"
-        kubectl logs -l app.kubernetes.io/name=service-b
-
-        # Start port forwarding in the background
         kubectl port-forward svc/my-app-service-b 8012:8012 &
-        PF_PID=$!
-
-        # Give the port forwarding time to establish
-        sleep 10
-
-        # Try the curl command and output the full response for debugging
-        echo "--- Testing service-b to service-a connectivity ---"
-        curl -v http://localhost:8012/ping_service_a
-
-        # Kill the port forwarding process
-        kill $PF_PID || true
+        sleep 5
+        curl -s http://0.0.0.0:8012/ping_service_a | grep "Greetings from Service A"

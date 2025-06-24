@@ -27,9 +27,18 @@ jobs:
       uses: trufflesecurity/trufflehog@main
       with:
         path: ./
-        base: main
-        head: HEAD
+        base: ${{ github.event.repository.default_branch }}
+        head: ${{ github.ref }}
         extra_args: --debug --only-verified
+      # Skip TruffleHog on push events to avoid base/head being the same
+      if: github.event_name == 'pull_request'
+
+    - name: Run TruffleHog (Full Scan for Push Events)
+      uses: trufflesecurity/trufflehog@main
+      with:
+        path: ./
+        extra_args: --debug --only-verified
+      if: github.event_name == 'push'
 
     # Python Security Analysis
     - name: Set up Python

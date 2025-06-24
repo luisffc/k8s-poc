@@ -1,0 +1,56 @@
+# GitLeaks configuration for secrets detection
+title: GitLeaks Config for OfferFit DevSecOps
+
+# Allowlist for known false positives
+allowlist:
+  description: "Global allowlist"
+  regexTarget: "match"
+  regexes:
+    - "^.*(test|spec|example).*$"  # Test files
+    - "^.*placeholder.*$"          # Placeholder values
+    - "^.*example.*$"              # Example configurations
+
+# Custom rules for specific secret patterns
+rules:
+  - id: github-token
+    description: GitHub Personal Access Token
+    regex: 'gh[pousr]_[A-Za-z0-9_]{36,251}'
+    secretGroup: 1
+    keywords:
+      - github
+      - token
+      - gh
+
+  - id: docker-config
+    description: Docker configuration secrets
+    regex: '(docker|registry).*["\']([a-zA-Z0-9+/=]{20,})["\']'
+    secretGroup: 2
+    keywords:
+      - docker
+      - registry
+      - auth
+
+  - id: kubernetes-secret
+    description: Kubernetes secrets
+    regex: 'kubectl.*secret.*["\']([a-zA-Z0-9+/=]{10,})["\']'
+    secretGroup: 1
+    keywords:
+      - kubectl
+      - secret
+      - kubernetes
+
+# File patterns to scan
+extend:
+  useDefault: true
+  rules:
+    - repo-config
+
+# Paths to include/exclude
+paths:
+  include:
+    - "**/*"
+  exclude:
+    - ".git/"
+    - "node_modules/"
+    - "*.log"
+    - "*.md"

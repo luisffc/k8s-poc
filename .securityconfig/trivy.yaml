@@ -1,0 +1,68 @@
+# Trivy configuration for container security scanning
+
+# Database configuration
+db:
+  # Skip database update for faster CI runs (update daily via cron)
+  skip-update: false
+  # Cache directory
+  cache-dir: /tmp/trivy-cache
+
+# Vulnerability scanning configuration
+vulnerability:
+  # Vulnerability types to scan for
+  type:
+    - os
+    - library
+
+# Security scanners to enable
+scanners:
+  - vuln
+  - secret
+  - config
+
+# Severity levels to report
+severity:
+  - UNKNOWN
+  - LOW
+  - MEDIUM
+  - HIGH
+  - CRITICAL
+
+# Exit code configuration
+exit-code: 0  # Don't fail on vulnerabilities in config scan, handle in workflow
+
+# Output configuration
+format: table  # Options: table, json, sarif, template
+
+# Secret scanning configuration
+secret:
+  config: .securityconfig/.gitleaks.toml
+
+# Misconfiguration scanning
+misconfig:
+  # Include Dockerfile checks
+  include-non-failures: false
+  # Trace misconfiguration findings
+  trace: false
+
+# File patterns to ignore
+file-patterns:
+  - "*.md"
+  - "*.txt"
+  - "test/**"
+  - "tests/**"
+
+# Vulnerability database
+vuln-type:
+  - os
+  - library
+
+# Skip certain files
+skip-files:
+  - "test/**"
+  - "tests/**"
+  - "*.test.*"
+
+# Policy configuration (for advanced users)
+# You can define custom policies here
+ignorefile: .securityconfig/.trivyignore

@@ -86,8 +86,7 @@ jobs:
           --set service-a.image.repository=ghcr.io/${{ github.repository_owner }}/service-a \
           --set service-b.image.repository=ghcr.io/${{ github.repository_owner }}/service-b \
           --set service-a.image.tag=sha-${{ github.sha }} \
-          --set service-b.image.tag=sha-${{ github.sha }} \
-          --set service-b.serviceA.url=http://my-app-service-a:8011
+          --set service-b.image.tag=sha-${{ github.sha }}
 
     - name: Test Services
       run: |

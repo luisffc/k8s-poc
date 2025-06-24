@@ -55,19 +55,17 @@ jobs:
         bandit -r service_a/ service_b/ -f json -o bandit-report.json --configfile .securityconfig/bandit.yaml || true
         bandit -r service_a/ service_b/ -ll --configfile .securityconfig/bandit.yaml
 
-    - name: Run Safety Scan
-      run: |
-        safety scan --file service_a/requirements.txt --output json --save-json safety-report-a.json || true
-        safety scan --file service_b/requirements.txt --output json --save-json safety-report-b.json || true
-        safety scan --file service_a/requirements.txt
-        safety scan --file service_b/requirements.txt
-
     - name: Run pip-audit
       run: |
         pip-audit --requirement service_a/requirements.txt --format=json --output=pip-audit-a.json || true
         pip-audit --requirement service_b/requirements.txt --format=json --output=pip-audit-b.json || true
         pip-audit --requirement service_a/requirements.txt
         pip-audit --requirement service_b/requirements.txt
+
+    - name: Run Safety CLI to check for vulnerabilities
+      uses: pyupio/safety-action@v1
+      with:
+        api-key: ${{ secrets.SAFETY_API_KEY }}
 
     # Dockerfile Security
     - name: Run Hadolint (Dockerfile Linter)

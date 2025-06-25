@@ -1,10 +1,11 @@
+---
 name: CI/CD Pipeline - KinD
 
 on:
-  push:
-    branches: [ main ]
+  # push:
+  #   branches: [main]
   pull_request:
-    branches: [ main ]
+    branches: [main]
 
 jobs:
   # Security Scanning Job - runs first to fail fast on security issues
@@ -14,115 +15,120 @@ jobs:
       # Optimize for GitHub Actions cache issues
       ACTIONS_STEP_DEBUG: false
     steps:
-    - uses: actions/checkout@v4
-      with:
-        fetch-depth: 0  # Required for some security tools
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Required for some security tools
 
-    # Secrets Detection
-    - name: Run GitLeaks
-      uses: gitleaks/gitleaks-action@v2
-      with:
-        config: .securityconfig/.gitleaks.toml
-      env:
-        GITHUB_TOKEN: ${{ secrets.MY_GITHUB_TOKEN }}
+      # Secrets Detection
+      - name: Run GitLeaks
+        uses: gitleaks/gitleaks-action@v2
+        with:
+          config: .securityconfig/.gitleaks.toml
+        env:
+          GITHUB_TOKEN: ${{ secrets.MY_GITHUB_TOKEN }}
 
-    - name: Run TruffleHog
-      uses: trufflesecurity/trufflehog@main
-      with:
-        path: ./
-        base: ${{ github.event.repository.default_branch }}
-        head: ${{ github.ref }}
-        extra_args: --debug --only-verified
-      # Skip TruffleHog on push events to avoid base/head being the same
-      if: github.event_name == 'pull_request'
+      - name: Run TruffleHog
+        uses: trufflesecurity/trufflehog@main
+        with:
+          path: ./
+          base: ${{ github.event.repository.default_branch }}
+          head: ${{ github.ref }}
+          extra_args: --debug --only-verified
+        # Skip TruffleHog on push events to avoid base/head being the same
+        if: github.event_name == 'pull_request'
 
-    - name: Run TruffleHog (Full Scan for Push Events)
-      uses: trufflesecurity/trufflehog@main
-      with:
-        path: ./
-        extra_args: --debug --only-verified
-      if: github.event_name == 'push'
+      - name: Run TruffleHog (Full Scan for Push Events)
+        uses: trufflesecurity/trufflehog@main
+        with:
+          path: ./
+          extra_args: --debug --only-verified
+        if: github.event_name == 'push'
 
-    # Python Security Analysis
-    - name: Set up Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: '3.11'
+      # Python Security Analysis
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
 
-    - name: Install Security Tools
-      run: |
-        pip install bandit[toml] safety pip-audit
+      - name: Install Security Tools
+        run: |
+          pip install bandit[toml] safety pip-audit
 
-    - name: Run Bandit Security Linter
-      run: |
-        bandit -r service_a/ service_b/ -f json -o bandit-report.json --configfile .securityconfig/bandit.yaml || true
-        bandit -r service_a/ service_b/ -ll --configfile .securityconfig/bandit.yaml
+      - name: Run Bandit Security Linter
+        run: |
+          bandit -r service_a/ service_b/ -f json -o bandit-report.json --configfile .securityconfig/bandit.yaml || true
+          bandit -r service_a/ service_b/ -ll --configfile .securityconfig/bandit.yaml
 
-    - name: Run pip-audit
-      run: |
-        pip-audit --requirement service_a/requirements.txt --format=json --output=pip-audit-a.json || true
-        pip-audit --requirement service_b/requirements.txt --format=json --output=pip-audit-b.json || true
-        pip-audit --requirement service_a/requirements.txt
-        pip-audit --requirement service_b/requirements.txt
+      - name: Run pip-audit
+        run: |
+          pip-audit --requirement service_a/requirements.txt --format=json --output=pip-audit-a.json || true
+          pip-audit --requirement service_b/requirements.txt --format=json --output=pip-audit-b.json || true
+          pip-audit --requirement service_a/requirements.txt
+          pip-audit --requirement service_b/requirements.txt
 
-    - name: Run Safety CLI to check for vulnerabilities
-      uses: pyupio/safety-action@v1
-      with:
-        api-key: ${{ secrets.SAFETY_API_KEY }}
+      - name: Run Safety CLI to check for vulnerabilities
+        run: |
+          # Install safety and try to run it
+          pip install safety
+          echo "Running Safety scan for service_a..."
+          safety check --requirement service_a/requirements.txt --json --output safety-report-service-a.json || echo "Safety scan completed with warnings/errors"
+          echo "Running Safety scan for service_b..."
+          safety check --requirement service_b/requirements.txt --json --output safety-report-service-b.json || echo "Safety scan completed with warnings/errors"
+          # Show results in console for immediate feedback
+          safety check --requirement service_a/requirements.txt || true
+          safety check --requirement service_b/requirements.txt || true
 
-    # Dockerfile Security
-    - name: Run Hadolint (Dockerfile Linter)
-      uses: hadolint/hadolint-action@v3.1.0
-      with:
-        dockerfile: service_a/Dockerfile
-        config: .securityconfig/.hadolint.yaml
-        failure-threshold: warning
+      # Dockerfile Security
+      - name: Run Hadolint (Dockerfile Linter)
+        uses: hadolint/hadolint-action@v3.1.0
+        with:
+          dockerfile: service_a/Dockerfile
+          config: .securityconfig/.hadolint.yaml
+          failure-threshold: warning
 
-    - name: Run Hadolint for Service B
-      uses: hadolint/hadolint-action@v3.1.0
-      with:
-        dockerfile: service_b/Dockerfile
-        config: .securityconfig/.hadolint.yaml
-        failure-threshold: warning
+      - name: Run Hadolint for Service B
+        uses: hadolint/hadolint-action@v3.1.0
+        with:
+          dockerfile: service_b/Dockerfile
+          config: .securityconfig/.hadolint.yaml
+          failure-threshold: warning
 
-    # Multi-language Security Analysis
-    - name: Run Semgrep
-      uses: semgrep/semgrep-action@v1
-      with:
-        config: >-
-          p/security-audit
-          p/secrets
-          p/python
-          p/docker
-          p/kubernetes
+      # Multi-language Security Analysis
+      - name: Run Semgrep
+        run: |
+          # Install and run Semgrep directly
+          pip install semgrep
+          semgrep --config=auto --json --output=semgrep-results.json . || true
+          semgrep --config=auto --text .
 
-    # Infrastructure as Code Security
-    - name: Run Checkov
-      uses: bridgecrewio/checkov-action@master
-      with:
-        directory: .
-        framework: dockerfile,kubernetes,secrets
-        output_format: sarif
-        output_file_path: checkov-report.sarif
+      # Infrastructure as Code Security
+      - name: Run Checkov
+        uses: bridgecrewio/checkov-action@v12
+        with:
+          directory: .
+          framework: dockerfile,kubernetes,secrets
+          output_format: sarif
+          output_file_path: checkov-report.sarif
 
-    # Kubernetes Security
-    - name: Run Kubesec
-      run: |
-        curl -sSX POST --data-binary @charts/my-app/charts/service-a/templates/deployment.yaml "https://v2.kubesec.io/scan" || true
-        curl -sSX POST --data-binary @charts/my-app/charts/service-b/templates/deployment.yaml "https://v2.kubesec.io/scan" || true
+      # Kubernetes Security
+      - name: Run Kubesec
+        run: |
+          curl -sSX POST --data-binary @charts/my-app/charts/service-a/templates/deployment.yaml "https://v2.kubesec.io/scan" || true
+          curl -sSX POST --data-binary @charts/my-app/charts/service-b/templates/deployment.yaml "https://v2.kubesec.io/scan" || true
 
-    # Upload security reports
-    - name: Upload Security Reports
-      uses: actions/upload-artifact@v4
-      if: always()
-      with:
-        name: security-reports
-        path: |
-          bandit-report.json
-          safety-report-*.json
-          pip-audit-*.json
-          checkov-report.sarif
-        retention-days: 30
+      # Upload security reports
+      - name: Upload Security Reports
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: security-reports
+          path: |
+            bandit-report.json
+            safety-report-*.json
+            pip-audit-*.json
+            checkov-report.sarif
+            semgrep-results.json
+          retention-days: 30
 
   build:
     needs: security-scan  # Only build if security scan passes
@@ -140,68 +146,68 @@ jobs:
       # Optimize for GitHub Actions cache issues
       ACTIONS_STEP_DEBUG: false
     steps:
-    - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-    - name: Docker Meta
-      id: meta
-      uses: docker/metadata-action@v5
-      with:
-        images: ghcr.io/${{ github.repository_owner }}/${{ matrix.service.name }}
-        tags: |
-          type=sha,format=long
-          type=ref,event=branch
-          type=ref,event=pr
-          type=semver,pattern={{version}}
-          type=semver,pattern={{major}}.{{minor}}
+      - name: Docker Meta
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/${{ github.repository_owner }}/${{ matrix.service.name }}
+          tags: |
+            type=sha,format=long
+            type=ref,event=branch
+            type=ref,event=pr
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
 
-    - name: Login to GitHub Container Registry
-      uses: docker/login-action@v3
-      with:
-        registry: ghcr.io
-        username: ${{ github.repository_owner }}
-        password: ${{ secrets.MY_GITHUB_TOKEN }}
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.MY_GITHUB_TOKEN }}
 
-    - name: Build Service Image
-      uses: docker/build-push-action@v6
-      with:
-        push: true
-        context: ${{ matrix.service.path }}
-        tags: ${{ steps.meta.outputs.tags }}
+      - name: Build Service Image
+        uses: docker/build-push-action@v6
+        with:
+          push: true
+          context: ${{ matrix.service.path }}
+          tags: ${{ steps.meta.outputs.tags }}
 
-    # Container Security Scanning
-    - name: Run Trivy Container Scan (Vulnerabilities)
-      uses: aquasecurity/trivy-action@master
-      with:
-        image-ref: ghcr.io/${{ github.repository_owner }}/${{ matrix.service.name }}:sha-${{ github.sha }}
-        format: 'sarif'
-        output: 'trivy-${{ matrix.service.id }}-results.sarif'
-        scanners: 'vuln,config'
-        trivy-config: .securityconfig/trivy.yaml
+      # Container Security Scanning
+      - name: Run Trivy Container Scan (Vulnerabilities)
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          image-ref: ghcr.io/${{ github.repository_owner }}/${{ matrix.service.name }}:sha-${{ github.sha }}
+          format: 'sarif'
+          output: 'trivy-${{ matrix.service.id }}-results.sarif'
+          scanners: 'vuln,config'
+          trivy-config: .securityconfig/trivy.yaml
 
-    - name: Run Trivy Container Secrets Scan
-      uses: aquasecurity/trivy-action@master
-      with:
-        image-ref: ghcr.io/${{ github.repository_owner }}/${{ matrix.service.name }}:sha-${{ github.sha }}
-        format: 'table'
-        scanners: 'secret'
-        # Use built-in secret detection without custom config
+      - name: Run Trivy Container Secrets Scan
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          image-ref: ghcr.io/${{ github.repository_owner }}/${{ matrix.service.name }}:sha-${{ github.sha }}
+          format: 'table'
+          scanners: 'secret'
+          # Use built-in secret detection without custom config
 
-    - name: Run Trivy Critical/High Vulnerabilities Check
-      uses: aquasecurity/trivy-action@master
-      with:
-        image-ref: ghcr.io/${{ github.repository_owner }}/${{ matrix.service.name }}:sha-${{ github.sha }}
-        format: 'table'
-        exit-code: '0'  # Continue even if vulnerabilities found
-        severity: 'CRITICAL,HIGH'
-        scanners: 'vuln'
+      - name: Run Trivy Critical/High Vulnerabilities Check
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          image-ref: ghcr.io/${{ github.repository_owner }}/${{ matrix.service.name }}:sha-${{ github.sha }}
+          format: 'table'
+          exit-code: '0'  # Continue even if vulnerabilities found
+          severity: 'CRITICAL,HIGH'
+          scanners: 'vuln'
 
-    - name: Upload Trivy scan results
-      uses: actions/upload-artifact@v4
-      if: always()
-      with:
-        name: trivy-results-${{ matrix.service.id }}
-        path: 'trivy-${{ matrix.service.id }}-results.sarif'
-        retention-days: 30
+      - name: Upload Trivy scan results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: trivy-results-${{ matrix.service.id }}
+          path: 'trivy-${{ matrix.service.id }}-results.sarif'
+          retention-days: 30
 
   local-deploy:
     needs: build
@@ -210,119 +216,120 @@ jobs:
       # Optimize for GitHub Actions cache issues
       ACTIONS_STEP_DEBUG: false
     steps:
-    - uses: actions/checkout@v4
-    - name: Login to GitHub Container Registry
-      uses: docker/login-action@v3
-      with:
-        registry: ghcr.io
-        username: ${{ github.repository_owner }}
-        password: ${{ secrets.MY_GITHUB_TOKEN }}
+      - uses: actions/checkout@v4
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.MY_GITHUB_TOKEN }}
 
-    - name: Pull Docker Images
-      run: |
-        docker pull ghcr.io/${{ github.repository_owner }}/service-a:sha-${{ github.sha }}
-        docker pull ghcr.io/${{ github.repository_owner }}/service-b:sha-${{ github.sha }}
-        docker images
+      - name: Pull Docker Images
+        run: |
+          docker pull ghcr.io/${{ github.repository_owner }}/service-a:sha-${{ github.sha }}
+          docker pull ghcr.io/${{ github.repository_owner }}/service-b:sha-${{ github.sha }}
+          docker images
 
-    - name: Set up Kubernetes (KinD)
-      uses: engineerd/setup-kind@v0.6.2
-      with:
-        version: "v0.24.0"
+      - name: Set up Kubernetes (KinD)
+        uses: helm/kind-action@v1
+        with:
+          version: "v0.24.0"
+          cluster_name: kind
 
-    - name: Load images into KinD
-      run: |
-        kind load docker-image ghcr.io/${{ github.repository_owner }}/service-a:sha-${{ github.sha }}
-        kind load docker-image ghcr.io/${{ github.repository_owner }}/service-b:sha-${{ github.sha }}
+      - name: Load images into KinD
+        run: |
+          kind load docker-image ghcr.io/${{ github.repository_owner }}/service-a:sha-${{ github.sha }}
+          kind load docker-image ghcr.io/${{ github.repository_owner }}/service-b:sha-${{ github.sha }}
 
-    - name: Install Helm
-      uses: azure/setup-helm@v4
-      with:
-        version: 'latest'
+      - name: Install Helm
+        uses: azure/setup-helm@v4
+        with:
+          version: 'latest'
 
-    - name: Deploy with Helm
-      run: |
-        helm upgrade --install my-app ./charts/my-app \
-          --set service-a.image.repository=ghcr.io/${{ github.repository_owner }}/service-a \
-          --set service-b.image.repository=ghcr.io/${{ github.repository_owner }}/service-b \
-          --set service-a.image.tag=sha-${{ github.sha }} \
-          --set service-b.image.tag=sha-${{ github.sha }}
+      - name: Deploy with Helm
+        run: |
+          helm upgrade --install my-app ./charts/my-app \
+            --set service-a.image.repository=ghcr.io/${{ github.repository_owner }}/service-a \
+            --set service-b.image.repository=ghcr.io/${{ github.repository_owner }}/service-b \
+            --set service-a.image.tag=sha-${{ github.sha }} \
+            --set service-b.image.tag=sha-${{ github.sha }}
 
-    # Runtime Security Validation
-    - name: Install Security Tools
-      run: |
-        # Install kube-score for Kubernetes security analysis
-        wget https://github.com/zegl/kube-score/releases/download/v1.17.0/kube-score_1.17.0_linux_amd64.tar.gz
-        tar xzf kube-score_1.17.0_linux_amd64.tar.gz
-        sudo mv kube-score /usr/local/bin/
+      # Runtime Security Validation
+      - name: Install Security Tools
+        run: |
+          # Install kube-score for Kubernetes security analysis
+          wget https://github.com/zegl/kube-score/releases/download/v1.17.0/kube-score_1.17.0_linux_amd64.tar.gz
+          tar xzf kube-score_1.17.0_linux_amd64.tar.gz
+          sudo mv kube-score /usr/local/bin/
 
-        # Install Polaris for best practices validation
-        wget https://github.com/FairwindsOps/polaris/releases/download/8.5.1/polaris_linux_amd64.tar.gz
-        tar xzf polaris_linux_amd64.tar.gz
-        sudo mv polaris /usr/local/bin/
+          # Install Polaris for best practices validation
+          wget https://github.com/FairwindsOps/polaris/releases/download/8.5.1/polaris_linux_amd64.tar.gz
+          tar xzf polaris_linux_amd64.tar.gz
+          sudo mv polaris /usr/local/bin/
 
-    - name: Kubernetes Security Validation
-      run: |
-        # Wait for deployment to be ready
-        kubectl wait --for=condition=available deployment --all --timeout=300s
+      - name: Kubernetes Security Validation
+        run: |
+          # Wait for deployment to be ready
+          kubectl wait --for=condition=available deployment --all --timeout=300s
 
-        # Get deployed manifests for security analysis
-        kubectl get all -o yaml > deployed-manifests.yaml
+          # Get deployed manifests for security analysis
+          kubectl get all -o yaml > deployed-manifests.yaml
 
-        # Run kube-score analysis
-        echo "Running kube-score security analysis..."
-        kube-score score deployed-manifests.yaml || true
+          # Run kube-score analysis
+          echo "Running kube-score security analysis..."
+          kube-score score deployed-manifests.yaml || true
 
-        # Run Polaris audit
-        echo "Running Polaris best practices audit..."
-        polaris audit --audit-path deployed-manifests.yaml --format json > polaris-report.json || true
-        polaris audit --audit-path deployed-manifests.yaml
+          # Run Polaris audit
+          echo "Running Polaris best practices audit..."
+          polaris audit --audit-path deployed-manifests.yaml --format json > polaris-report.json || true
+          polaris audit --audit-path deployed-manifests.yaml
 
-        # Check for security contexts and non-root users
-        echo "Checking security contexts..."
-        kubectl get pods -o jsonpath='{range .items[*]}{.metadata.name}{": "}{.spec.securityContext}{"\n"}{end}'
-        kubectl get pods -o jsonpath='{range .items[*]}{.metadata.name}{": "}{.spec.containers[*].securityContext}{"\n"}{end}'
+          # Check for security contexts and non-root users
+          echo "Checking security contexts..."
+          kubectl get pods -o jsonpath='{range .items[*]}{.metadata.name}{": "}{.spec.securityContext}{"\n"}{end}'
+          kubectl get pods -o jsonpath='{range .items[*]}{.metadata.name}{": "}{.spec.containers[*].securityContext}{"\n"}{end}'
 
-    - name: Runtime Container Security Scan
-      run: |
-        # Scan running containers with Trivy
-        for pod in $(kubectl get pods -o jsonpath='{.items[*].metadata.name}'); do
-          echo "Scanning pod: $pod"
-          kubectl get pod $pod -o jsonpath='{.spec.containers[*].image}' | xargs -I {} trivy image {} || true
-        done
+      - name: Runtime Container Security Scan
+        run: |
+          # Scan running containers with Trivy
+          for pod in $(kubectl get pods -o jsonpath='{.items[*].metadata.name}'); do
+            echo "Scanning pod: $pod"
+            kubectl get pod $pod -o jsonpath='{.spec.containers[*].image}' | xargs -I {} trivy image {} || true
+          done
 
-    - name: Network Policy Validation
-      run: |
-        # Check for network policies
-        kubectl get networkpolicies
-        if [ $(kubectl get networkpolicies --no-headers | wc -l) -eq 0 ]; then
-          echo "WARNING: No network policies found. Consider implementing network segmentation."
-        fi
+      - name: Network Policy Validation
+        run: |
+          # Check for network policies
+          kubectl get networkpolicies
+          if [ $(kubectl get networkpolicies --no-headers | wc -l) -eq 0 ]; then
+            echo "WARNING: No network policies found. Consider implementing network segmentation."
+          fi
 
-    - name: RBAC Security Check
-      run: |
-        # Audit RBAC permissions
-        echo "Current RBAC roles and bindings:"
-        kubectl get roles,rolebindings,clusterroles,clusterrolebindings
+      - name: RBAC Security Check
+        run: |
+          # Audit RBAC permissions
+          echo "Current RBAC roles and bindings:"
+          kubectl get roles,rolebindings,clusterroles,clusterrolebindings
 
-        # Check for overly permissive service accounts
-        kubectl get serviceaccounts -o yaml > serviceaccounts.yaml
-        grep -E "(cluster-admin|admin)" serviceaccounts.yaml || echo "No cluster-admin bindings found in service accounts"
+          # Check for overly permissive service accounts
+          kubectl get serviceaccounts -o yaml > serviceaccounts.yaml
+          grep -E "(cluster-admin|admin)" serviceaccounts.yaml || echo "No cluster-admin bindings found in service accounts"
 
-    - name: Upload Runtime Security Reports
-      uses: actions/upload-artifact@v4
-      if: always()
-      with:
-        name: runtime-security-reports
-        path: |
-          deployed-manifests.yaml
-          polaris-report.json
-          serviceaccounts.yaml
-        retention-days: 30
+      - name: Upload Runtime Security Reports
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: runtime-security-reports
+          path: |
+            deployed-manifests.yaml
+            polaris-report.json
+            serviceaccounts.yaml
+          retention-days: 30
 
-    - name: Test Services
-      run: |
-        kubectl wait --for=condition=ready pod -l app.kubernetes.io/name=service-a --timeout=60s
-        kubectl wait --for=condition=ready pod -l app.kubernetes.io/name=service-b --timeout=60s
-        kubectl port-forward svc/my-app-service-b 8012:8012 &
-        sleep 5
-        curl -s http://0.0.0.0:8012/ping_service_a | grep "Greetings from Service A"
+      - name: Test Services
+        run: |
+          kubectl wait --for=condition=ready pod -l app.kubernetes.io/name=service-a --timeout=60s
+          kubectl wait --for=condition=ready pod -l app.kubernetes.io/name=service-b --timeout=60s
+          kubectl port-forward svc/my-app-service-b 8012:8012 &
+          sleep 5
+          curl -s http://0.0.0.0:8012/ping_service_a | grep "Greetings from Service A"

@@ -50,16 +50,6 @@ helm upgrade --install service-a ./helm/service-a
 helm upgrade --install service-b ./helm/service-b
 ```
 
-Alternatively, you can use the provided deployment script:
-
-```bash
-# Make the script executable
-chmod +x deploy.sh
-
-# Run the deployment script
-./deploy.sh
-```
-
 ## Verifying the Deployment
 
 1. Check that the pods are running:

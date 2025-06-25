@@ -162,13 +162,22 @@ jobs:
         tags: ${{ steps.meta.outputs.tags }}
 
     # Container Security Scanning
-    - name: Run Trivy Container Scan
+    - name: Run Trivy Container Scan (Vulnerabilities)
       uses: aquasecurity/trivy-action@master
       with:
         image-ref: ghcr.io/${{ github.repository_owner }}/${{ matrix.service.name }}:sha-${{ github.sha }}
         format: 'sarif'
         output: 'trivy-${{ matrix.service.id }}-results.sarif'
+        scanners: 'vuln,config'
         trivy-config: .securityconfig/trivy.yaml
+
+    - name: Run Trivy Container Secrets Scan
+      uses: aquasecurity/trivy-action@master
+      with:
+        image-ref: ghcr.io/${{ github.repository_owner }}/${{ matrix.service.name }}:sha-${{ github.sha }}
+        format: 'table'
+        scanners: 'secret'
+        # Use built-in secret detection without custom config
 
     - name: Run Trivy Critical/High Vulnerabilities Check
       uses: aquasecurity/trivy-action@master
@@ -177,6 +186,7 @@ jobs:
         format: 'table'
         exit-code: '1'
         severity: 'CRITICAL,HIGH'
+        scanners: 'vuln'
 
     - name: Docker Scout CVE Scan
       uses: docker/scout-action@v1

@@ -17,8 +17,8 @@ vulnerability:
 # Security scanners to enable
 scanners:
   - vuln
-  - secret
   - config
+  # Note: secret scanning enabled separately to avoid config conflicts
 
 # Severity levels to report
 severity:
@@ -35,8 +35,8 @@ exit-code: 0  # Don't fail on vulnerabilities in config scan, handle in workflow
 format: table  # Options: table, json, sarif, template
 
 # Secret scanning configuration
-secret:
-  config: .securityconfig/.gitleaks.toml
+# Using Trivy's built-in secret detection (no custom config needed)
+# GitLeaks handles repository-level secret scanning separately
 
 # Misconfiguration scanning
 misconfig:

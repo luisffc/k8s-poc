@@ -52,7 +52,7 @@ jobs:
 
       - name: Install Security Tools
         run: |
-          pip install bandit[toml] safety pip-audit
+          pip install bandit safety pip-audit
 
       - name: Run Bandit Security Linter
         run: |
@@ -326,7 +326,7 @@ jobs:
             serviceaccounts.yaml
           retention-days: 30
 
-      - name: Test Services
+      - name: Test Services communication
         run: |
           kubectl wait --for=condition=ready pod -l app.kubernetes.io/name=service-a --timeout=60s
           kubectl wait --for=condition=ready pod -l app.kubernetes.io/name=service-b --timeout=60s

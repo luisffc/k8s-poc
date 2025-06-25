@@ -22,8 +22,6 @@ jobs:
       # Secrets Detection
       - name: Run GitLeaks
         uses: gitleaks/gitleaks-action@v2
-        with:
-          config: .securityconfig/.gitleaks.toml
         env:
           GITHUB_TOKEN: ${{ secrets.MY_GITHUB_TOKEN }}
 

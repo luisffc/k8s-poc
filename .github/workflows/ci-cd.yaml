@@ -1,9 +1,8 @@
 ---
 name: CI/CD Pipeline
 
+# This workflow is designed to run on pull requests to the main branch.
 on:
-  # push:
-  #   branches: [main]
   pull_request:
     branches: [main]
 

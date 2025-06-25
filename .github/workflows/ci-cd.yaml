@@ -170,7 +170,7 @@ jobs:
 
     # Container Security Scanning
     - name: Run Trivy Container Scan (Vulnerabilities)
-      uses: aquasecurity/trivy-action@master
+      uses: aquasecurity/trivy-action@v0.31.0
       with:
         image-ref: ghcr.io/${{ github.repository_owner }}/${{ matrix.service.name }}:sha-${{ github.sha }}
         format: 'sarif'
@@ -179,7 +179,7 @@ jobs:
         trivy-config: .securityconfig/trivy.yaml
 
     - name: Run Trivy Container Secrets Scan
-      uses: aquasecurity/trivy-action@master
+      uses: aquasecurity/trivy-action@v0.31.0
       with:
         image-ref: ghcr.io/${{ github.repository_owner }}/${{ matrix.service.name }}:sha-${{ github.sha }}
         format: 'table'
@@ -187,7 +187,7 @@ jobs:
         # Use built-in secret detection without custom config
 
     - name: Run Trivy Critical/High Vulnerabilities Check
-      uses: aquasecurity/trivy-action@master
+      uses: aquasecurity/trivy-action@v0.31.0
       with:
         image-ref: ghcr.io/${{ github.repository_owner }}/${{ matrix.service.name }}:sha-${{ github.sha }}
         format: 'table'

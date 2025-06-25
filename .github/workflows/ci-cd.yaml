@@ -22,8 +22,6 @@ jobs:
       # Secrets Detection
       - name: Run GitLeaks
         uses: gitleaks/gitleaks-action@v2
-        with:
-          config: .securityconfig/.gitleaks.toml
         env:
           GITHUB_TOKEN: ${{ secrets.MY_GITHUB_TOKEN }}
 
@@ -56,8 +54,8 @@ jobs:
 
       - name: Run Bandit Security Linter
         run: |
-          bandit -r service_a/ service_b/ -f json -o bandit-report.json --configfile .securityconfig/bandit.yaml || true
-          bandit -r service_a/ service_b/ -ll --configfile .securityconfig/bandit.yaml
+          bandit -r service_a/ service_b/ -f json -o bandit-report.json || true
+          bandit -r service_a/ service_b/ -ll
 
       - name: Run pip-audit
         run: |
@@ -83,14 +81,12 @@ jobs:
         uses: hadolint/hadolint-action@v3.1.0
         with:
           dockerfile: service_a/Dockerfile
-          config: .securityconfig/.hadolint.yaml
           failure-threshold: warning
 
       - name: Run Hadolint for Service B
         uses: hadolint/hadolint-action@v3.1.0
         with:
           dockerfile: service_b/Dockerfile
-          config: .securityconfig/.hadolint.yaml
           failure-threshold: warning
 
       # Multi-language Security Analysis
@@ -175,14 +171,13 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
 
       # Container Security Scanning
-      - name: Run Trivy Container Scan (Vulnerabilities)
+      - name: Run Trivy Container Vulnerability Scan
         uses: aquasecurity/trivy-action@0.28.0
         with:
           image-ref: ghcr.io/${{ github.repository_owner }}/${{ matrix.service.name }}:sha-${{ github.sha }}
           format: 'sarif'
           output: 'trivy-${{ matrix.service.id }}-results.sarif'
           scanners: 'vuln,config'
-          trivy-config: .securityconfig/trivy.yaml
 
       - name: Run Trivy Container Secrets Scan
         uses: aquasecurity/trivy-action@0.28.0

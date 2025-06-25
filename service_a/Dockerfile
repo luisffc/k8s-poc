@@ -4,8 +4,6 @@ FROM python:3.13.5-slim-bookworm
 # Security: Update system packages and remove unnecessary packages
 RUN apt-get update && \
     apt-get upgrade -y && \
-    apt-get install -y --no-install-recommends \
-        ca-certificates && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 

@@ -100,6 +100,7 @@ If you want to run this pipeline yourself:
 - `MY_GITHUB_TOKEN`: For pushing to GitHub Container Registry
 
 ## My backlog for this project if I had more time
+- Revisit helm charts to ensure best practices and perform a templates cleanup. (For fast bootstrapping, I used the helm create command)
 - Review services helm charts looking for similar templates that can be shared through the umbrella chart
 - Perform a load test and define resource requirements and limits for the services deployment
 - Change GHA `security-scan` step to also use matrix

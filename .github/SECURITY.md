@@ -39,12 +39,12 @@ We take security seriously. If you discover a security vulnerability, please fol
 ## Security Measures in Place
 
 ### DevSecOps Pipeline
-- **Static Application Security Testing (SAST)**: Bandit, Semgrep
-- **Dependency Scanning**: Safety, pip-audit, Snyk
+- **Static Application Security Testing (SAST)**: Semgrep
+- **Dependency Scanning**: pip-audit
 - **Container Security**: Trivy, Hadolint
-- **Secrets Detection**: GitLeaks, TruffleHog
-- **Infrastructure as Code**: Checkov, Kubesec
-- **Runtime Security**: kube-score, Polaris
+- **Secrets Detection**: GitLeaks
+- **Infrastructure as Code**: Checkov
+- **Runtime Security**: Polaris
 
 ### Security Best Practices
 - **Principle of Least Privilege**: All services run with minimal permissions

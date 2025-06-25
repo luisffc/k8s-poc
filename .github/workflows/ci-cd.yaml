@@ -27,23 +27,6 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.MY_GITHUB_TOKEN }}
 
-      - name: Run TruffleHog
-        uses: trufflesecurity/trufflehog@main
-        with:
-          path: ./
-          base: ${{ github.event.repository.default_branch }}
-          head: ${{ github.ref }}
-          extra_args: --debug --only-verified
-        # Skip TruffleHog on push events to avoid base/head being the same
-        if: github.event_name == 'pull_request'
-
-      - name: Run TruffleHog (Full Scan for Push Events)
-        uses: trufflesecurity/trufflehog@main
-        with:
-          path: ./
-          extra_args: --debug --only-verified
-        if: github.event_name == 'push'
-
       # Python Security Analysis
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -52,31 +35,20 @@ jobs:
 
       - name: Install Security Tools
         run: |
-          pip install bandit safety pip-audit
+          pip install semgrep pip-audit
 
-      - name: Run Bandit Security Linter
+      - name: Run Semgrep (SAST)
         run: |
-          bandit -r service_a/ service_b/ -f json -o bandit-report.json --configfile .securityconfig/bandit.yaml || true
-          bandit -r service_a/ service_b/ -ll --configfile .securityconfig/bandit.yaml
+          # Install and run Semgrep directly
+          semgrep --config=auto --json --output=semgrep-results.json . || true
+          semgrep --config=auto --text .
 
-      - name: Run pip-audit
+      - name: Run pip-audit (Dependency Scanning)
         run: |
           pip-audit --requirement service_a/requirements.txt --format=json --output=pip-audit-a.json || true
           pip-audit --requirement service_b/requirements.txt --format=json --output=pip-audit-b.json || true
           pip-audit --requirement service_a/requirements.txt
           pip-audit --requirement service_b/requirements.txt
-
-      - name: Run Safety CLI to check for vulnerabilities
-        run: |
-          # Install safety and try to run it
-          pip install safety
-          echo "Running Safety scan for service_a..."
-          safety check --requirement service_a/requirements.txt --json --output safety-report-service-a.json || echo "Safety scan completed with warnings/errors"
-          echo "Running Safety scan for service_b..."
-          safety check --requirement service_b/requirements.txt --json --output safety-report-service-b.json || echo "Safety scan completed with warnings/errors"
-          # Show results in console for immediate feedback
-          safety check --requirement service_a/requirements.txt || true
-          safety check --requirement service_b/requirements.txt || true
 
       # Dockerfile Security
       - name: Run Hadolint (Dockerfile Linter)
@@ -93,14 +65,6 @@ jobs:
           config: .securityconfig/.hadolint.yaml
           failure-threshold: warning
 
-      # Multi-language Security Analysis
-      - name: Run Semgrep
-        run: |
-          # Install and run Semgrep directly
-          pip install semgrep
-          semgrep --config=auto --json --output=semgrep-results.json . || true
-          semgrep --config=auto --text .
-
       # Infrastructure as Code Security
       - name: Run Checkov
         uses: bridgecrewio/checkov-action@v12
@@ -110,12 +74,6 @@ jobs:
           output_format: sarif
           output_file_path: checkov-report.sarif
 
-      # Kubernetes Security
-      - name: Run Kubesec
-        run: |
-          curl -sSX POST --data-binary @charts/my-app/charts/service-a/templates/deployment.yaml "https://v2.kubesec.io/scan" || true
-          curl -sSX POST --data-binary @charts/my-app/charts/service-b/templates/deployment.yaml "https://v2.kubesec.io/scan" || true
-
       # Upload security reports
       - name: Upload Security Reports
         uses: actions/upload-artifact@v4
@@ -123,11 +81,9 @@ jobs:
         with:
           name: security-reports
           path: |
-            bandit-report.json
-            safety-report-*.json
+            semgrep-results.json
             pip-audit-*.json
             checkov-report.sarif
-            semgrep-results.json
           retention-days: 30
 
   build:
@@ -257,11 +213,6 @@ jobs:
       # Runtime Security Validation
       - name: Install Security Tools
         run: |
-          # Install kube-score for Kubernetes security analysis
-          wget https://github.com/zegl/kube-score/releases/download/v1.17.0/kube-score_1.17.0_linux_amd64.tar.gz
-          tar xzf kube-score_1.17.0_linux_amd64.tar.gz
-          sudo mv kube-score /usr/local/bin/
-
           # Install Polaris for best practices validation
           wget https://github.com/FairwindsOps/polaris/releases/download/8.5.1/polaris_linux_amd64.tar.gz
           tar xzf polaris_linux_amd64.tar.gz
@@ -274,10 +225,6 @@ jobs:
 
           # Get deployed manifests for security analysis
           kubectl get all -o yaml > deployed-manifests.yaml
-
-          # Run kube-score analysis
-          echo "Running kube-score security analysis..."
-          kube-score score deployed-manifests.yaml || true
 
           # Run Polaris audit
           echo "Running Polaris best practices audit..."

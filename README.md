@@ -78,6 +78,10 @@ This project includes a GitHub Actions workflow that:
 3. Deploys the services using Helm
 4. Tests the services' functionality
 
+### Required Secrets
+Configure these GitHub secrets for full functionality:
+- `MY_GITHUB_TOKEN`: GitHub Container Registry access
+
 ## Handling Secrets in Production
 
 For a production environment, sensitive data would be handled more securely:

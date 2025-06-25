@@ -9,15 +9,11 @@ Our security-first approach implements multiple layers of security scanning thro
 ### 1. **Pre-Commit Security (Shift-Left)**
 
 #### Source Code Security (SAST)
-- **Bandit**: Python security linter detecting common security issues
 - **Semgrep**: Multi-language static analysis for security vulnerabilities
 - **GitLeaks**: Secrets detection in git repositories
-- **TruffleHog**: Advanced secrets scanner with verified results
 
 #### Dependency Security (SCA)
-- **Safety**: Python dependency vulnerability scanner
 - **pip-audit**: Python package vulnerability auditing
-- **Snyk**: Comprehensive dependency vulnerability management
 
 ### 2. **Build-Time Security**
 
@@ -27,12 +23,10 @@ Our security-first approach implements multiple layers of security scanning thro
 
 #### Infrastructure as Code Security
 - **Checkov**: Terraform/Kubernetes/Dockerfile security scanner
-- **Kubesec**: Kubernetes security risk analysis
 
 ### 3. **Runtime Security**
 
 #### Kubernetes Security
-- **kube-score**: Kubernetes security scoring
 - **Polaris**: Kubernetes best practices validation
 - **RBAC auditing**: Role-based access control validation
 - **Network policy validation**: Network segmentation checks
@@ -40,11 +34,10 @@ Our security-first approach implements multiple layers of security scanning thro
 ## Security Tools Configuration
 
 ### Tool Configurations
-- **Bandit**: `.securityconfig/bandit.yaml`
-- **Safety**: `.securityconfig/safety.yaml`
 - **Semgrep**: `.securityconfig/semgrep.yml`
 - **GitLeaks**: `.securityconfig/.gitleaks.toml`
 - **Trivy**: `.securityconfig/trivy.yaml`
+- **Hadolint**: `.securityconfig/.hadolint.yaml`
 
 ### Security Thresholds
 - **Critical/High vulnerabilities**: Fail the build
@@ -141,34 +134,3 @@ All pull requests trigger:
 - **OWASP Top 10**: Addressed through SAST tools
 - **CIS Benchmarks**: Kubernetes security scoring
 - **NIST**: Security controls implementation
-
-### Audit Trail
-- All security scans logged
-- Security findings tracked
-- Remediation history maintained
-
-## Getting Started
-
-### Required Secrets
-Configure these GitHub secrets for full functionality:
-- `MY_GITHUB_TOKEN`: GitHub Container Registry access
-- `SEMGREP_APP_TOKEN`: (Optional) Enhanced Semgrep features
-- `SAFETY_API_KEY`: (Optional) Safety Pro features
-
-### Running Security Scans Locally
-
-```bash
-# Install security tools
-pip install bandit[toml] safety pip-audit
-
-# Run Python security scans
-bandit -r service_a/ service_b/ --configfile .securityconfig/bandit.yaml
-safety check --file service_a/requirements.txt
-pip-audit --requirement service_a/requirements.txt
-
-# Run container scans
-trivy image your-image:tag --config .securityconfig/trivy.yaml
-
-# Run secrets detection
-gitleaks detect --config .securityconfig/.gitleaks.toml
-```

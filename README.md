@@ -1,22 +1,27 @@
-# Microservices Assessment
+# OfferFit DevOps Assessment
 
-This repository contains two Python FastAPI microservices (Service A and Service B) that are containerized and deployed to Kubernetes using Helm.
+Hey there! This repo is my take on the OfferFit DevOps assessment. I've got two simple Python FastAPI microservices that I've containerized and deployed to Kubernetes using Helm, with a CI/CD pipeline that's security-focused from the ground up.
 
-## Architecture
+## What's Inside
 
-- **Service A**: A simple FastAPI service that returns a greeting message
-- **Service B**: A FastAPI service that calls Service A and returns a combined response
+This is pretty straightforward:
+- **Service A**: Just returns a friendly greeting message
+- **Service B**: Calls Service A and combines the responses
 
-## Prerequisites
+The whole thing demonstrates DevSecOps best practices with automated security scanning, container security, and deployment automation.
 
-- Docker
-- Kubernetes cluster (Minikube, KinD, or similar)
+## Quick Start
+
+### What You'll Need
+
+- Docker (for building images)
+- A local Kubernetes cluster (I recommend KinD or Minikube)
 - Helm v3+
 - kubectl
 
-## Building the Deployment Artifacts
+### Building Everything
 
-### Build Docker Images
+Let's get those containers built:
 
 ```bash
 # Build Service A
@@ -26,7 +31,7 @@ docker build -t service-a:latest ./service_a
 docker build -t service-b:latest ./service_b
 ```
 
-If using a local Kubernetes cluster like Minikube or KinD, load the images:
+If you're using a local cluster, don't forget to load the images:
 
 ```bash
 # For Minikube
@@ -38,66 +43,98 @@ kind load docker-image service-a:latest
 kind load docker-image service-b:latest
 ```
 
-## Deploying with Helm
+### Deploying with Helm
 
-### Install the Helm Charts
+This is where the magic happens:
 
 ```bash
-# Install Service A
-helm upgrade --install service-a ./helm/service-a
-
-# Install Service B
-helm upgrade --install service-b ./helm/service-b
+# Deploy both services using the umbrella chart
+helm upgrade --install my-app ./charts/my-app
 ```
 
-## Verifying the Deployment
+That's it! The umbrella chart handles both services as dependencies.
 
-1. Check that the pods are running:
+### Testing Everything Works
+
+Let's make sure Service B can actually talk to Service A:
 
 ```bash
+# Check that pods are happy
 kubectl get pods
+
+# Port-forward to Service B
+kubectl port-forward svc/my-app-service-b 8012:8012
+
+# In another terminal, test the services communication
+curl http://localhost:8012/ping_service_a
 ```
 
-2. Test Service B's connection to Service A:
+You should see a response with both Service B's message and Service A's greeting. Pretty cool, right?
 
-```bash
-# Port-forward Service B
-kubectl port-forward svc/service-b 8012:8012
+## CI/CD Pipeline & Security
 
-# In another terminal, make a request to Service B
-curl http://localhost:8012/call-service-a
-```
+Here's where things get interesting! I've built a CI/CD pipeline using GitHub Actions that doesn't mess around when it comes to security.
 
-You should see a response that includes both Service B's message and Service A's response.
+### The Pipeline Does This:
 
-## CI/CD Pipeline
+1. **Security First**: Runs multiple security scans before even building anything
+2. **Build & Push**: Creates container images and pushes them to GitHub Container Registry  
+3. **Deploy**: Sets up a KinD cluster and deploys everything with Helm
+4. **Test**: Validates that services can communicate
+5. **Runtime Security**: Performs additional security checks on the running deployment
 
-This project includes a GitHub Actions workflow that:
-1. Builds the Docker images
-2. Sets up a KinD Kubernetes cluster
-3. Deploys the services using Helm
-4. Tests the services' functionality
+### Security Scanning Includes:
+- Static code analysis (Semgrep)
+- Secrets detection (GitLeaks) 
+- Dependency vulnerability scanning (pip-audit)
+- Container security scanning (Trivy)
+- Dockerfile best practices (Hadolint)
+- Infrastructure as Code security (Checkov)
+- Runtime Kubernetes security validation (Polaris)
 
-### Required Secrets
-Configure these GitHub secrets for full functionality:
-- `MY_GITHUB_TOKEN`: GitHub Container Registry access
+**For detailed security implementation, check out [SECURITY.md](SECURITY.md)**
 
-## Handling Secrets in Production
+### GitHub Secrets You'll Need
 
-For a production environment, sensitive data would be handled more securely:
+If you want to run this pipeline yourself:
+- `MY_GITHUB_TOKEN`: For pushing to GitHub Container Registry
 
-1. **Kubernetes Secrets**: Used for storing sensitive environment variables
-2. **HashiCorp Vault**: For dynamic secrets management
-3. **External Secret Operators**: To sync secrets from external providers
-4. **Sealed Secrets**: For encrypting secrets that can be safely stored in Git
+## Production-Ready Improvements
 
-## Improvements for Production
+Here's what I'd add for a real production environment:
 
-1. **Monitoring and Observability**: Implement Prometheus and Grafana for monitoring
-2. **Horizontal Pod Autoscaling**: Configure autoscaling based on CPU/memory usage
-3. **Network Policies**: Implement stricter network security policies
-4. **Resource Management**: Fine-tune resource requests and limits
-5. **Liveness/Readiness Probes**: Add health checks for better resilience
-6. **Database Integration**: Add persistent storage for stateful applications
-7. **Zero-downtime Deployments**: Configure proper deployment strategies
-8. **HTTPS/TLS**: Add ingress with TLS for secure endpoints
+### Secrets Management
+- **Kubernetes Secrets**: For environment variables
+- **HashiCorp Vault**: Dynamic secrets management  
+- **External Secret Operators**: Sync from external secret stores
+- **Sealed Secrets**: Encrypt secrets that can live in Git
+
+### Observability & Monitoring
+- **Prometheus + Grafana**: Metrics and dashboards
+- **Distributed Tracing**: OpenTelemetry or Jaeger
+- **Centralized Logging**: ELK stack or similar
+- **Alerting**: PagerDuty integration
+
+### Scalability & Reliability  
+- **Horizontal Pod Autoscaling**: Scale based on metrics
+- **Vertical Pod Autoscaling**: Right-size containers
+- **Pod Disruption Budgets**: Maintain availability during updates
+- **Circuit Breakers**: Resilient service communication
+
+### Security Hardening
+- **Network Policies**: Strict network segmentation
+- **Pod Security Standards**: Enforce security contexts
+- **RBAC**: Fine-grained access control
+- **Service Mesh**: mTLS between services (Istio/Linkerd)
+
+### Deployment & GitOps
+- **ArgoCD/Flux**: GitOps-based deployments
+- **Blue/Green Deployments**: Zero-downtime releases
+- **Canary Releases**: Gradual rollouts
+- **Rollback Strategies**: Quick recovery from issues
+
+## Final Thoughts
+
+This was a fun little project! The focus was on demonstrating solid DevSecOps fundamentals with security baked into every step of the pipeline. The services themselves are simple, but the deployment infrastructure is production-minded with comprehensive security scanning and validation.
+
+Feel free to poke around the code and let me know if you have any questions!

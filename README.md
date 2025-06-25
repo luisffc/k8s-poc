@@ -97,13 +97,3 @@ For a production environment, sensitive data would be handled more securely:
 6. **Database Integration**: Add persistent storage for stateful applications
 7. **Zero-downtime Deployments**: Configure proper deployment strategies
 8. **HTTPS/TLS**: Add ingress with TLS for secure endpoints
-## Improvements for Production
-
-1. **Monitoring and Observability**: Implement Prometheus and Grafana for monitoring
-2. **Horizontal Pod Autoscaling**: Configure autoscaling based on CPU/memory usage
-3. **Network Policies**: Implement stricter network security policies
-4. **Resource Management**: Fine-tune resource requests and limits
-5. **Liveness/Readiness Probes**: Add health checks for better resilience
-6. **Database Integration**: Add persistent storage for stateful applications
-7. **Zero-downtime Deployments**: Configure proper deployment strategies
-8. **HTTPS/TLS**: Add ingress with TLS for secure endpoints

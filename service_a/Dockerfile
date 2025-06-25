@@ -1,5 +1,5 @@
 # Use specific version for security and reproducibility
-FROM python:3.11.10-slim-bookworm
+FROM python:3.13.5-slim-bookworm
 
 # Security: Update system packages and remove unnecessary packages
 RUN apt-get update && \

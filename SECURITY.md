@@ -23,7 +23,6 @@ Our security-first approach implements multiple layers of security scanning thro
 
 #### Container Security
 - **Trivy**: Container vulnerability and misconfiguration scanner
-- **Docker Scout**: Docker's native security scanning
 - **Hadolint**: Dockerfile security and best practices linter
 
 #### Infrastructure as Code Security

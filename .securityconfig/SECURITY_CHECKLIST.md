@@ -146,7 +146,6 @@
 
 ### Container Security
 - [ ] Trivy configured for container vulnerability scanning
-- [ ] Docker Scout enabled for Docker security analysis
 - [ ] Hadolint configured for Dockerfile security linting
 - [ ] Container registry security scanning enabled
 

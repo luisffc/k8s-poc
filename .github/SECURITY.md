@@ -41,7 +41,7 @@ We take security seriously. If you discover a security vulnerability, please fol
 ### DevSecOps Pipeline
 - **Static Application Security Testing (SAST)**: Bandit, Semgrep
 - **Dependency Scanning**: Safety, pip-audit, Snyk
-- **Container Security**: Trivy, Docker Scout, Hadolint
+- **Container Security**: Trivy, Hadolint
 - **Secrets Detection**: GitLeaks, TruffleHog
 - **Infrastructure as Code**: Checkov, Kubesec
 - **Runtime Security**: kube-score, Polaris
